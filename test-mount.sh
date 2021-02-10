@@ -1,5 +1,7 @@
 #!/bin/bash
 
+NS="rook-ceph"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BROWN='\033[0;33m'
@@ -11,7 +13,7 @@ CROSS="\xE2\x9D\x8C"
 elapsed=0
 while true;
 do
-    ips=$(kubectl get svc -n rook-ceph -l app=rook-ceph-mon -o=jsonpath="{.items[*]['spec.clusterIP']}")
+    ips=$(kubectl get svc -n $NS -l app=rook-ceph-mon -o=jsonpath="{.items[*]['spec.clusterIP']}")
     rt=$?
     ar=($ips)
     if [[ $rt != 0 || ${#ar[@]} < 1 ]]; then
@@ -40,9 +42,10 @@ do
     fi
 done
 
-d=$(kubectl get secret rook-ceph-admin-keyring -n rook-ceph -o=jsonpath={.data.keyring} | base64 -d)
+d=$(kubectl get secret rook-ceph-admin-keyring -n $NS -o=jsonpath={.data.keyring} | base64 -d)
+echo $d
 secret=$(grep key <<< $d | awk '{print $3}' | base64 -w0 | base64 -d)
-fsNamespace=$(kubectl get CephFilesystem -nrook-ceph -oname | cut -d'/' -f 2)
+fsNamespace=$(kubectl get CephFilesystem -n $NS -oname | cut -d'/' -f 2)
 
 printf "${BROWN} Run the following command to mount and test ceph ${NC}\n"
 printf "\n${GREEN} sudo mount -t ceph $ceph_ips_list_no_quote:/ /mnt -o name=admin,secret=$secret,mds_namespace=$fsNamespace,_netdev \n${NC}"
