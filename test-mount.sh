@@ -44,7 +44,17 @@ done
 
 d=$(kubectl get secret rook-ceph-admin-keyring -n $NS -o=jsonpath={.data.keyring} | base64 -d)
 echo $d
-secret=$(grep key <<< $d | awk '{print $3}' | base64 -w0 | base64 -d)
+
+apt --version &>/dev/null
+if [[ $? -eq 0 ]]; then
+	secret=$(grep key <<< $d | awk '{print $3}' | base64 -w0 | base64 -d)
+fi
+
+yum version &>/dev/null
+if [[ $? -eq 0 ]]; then
+	secret=$(grep key <<< $d | awk '{print $4}' | base64 -w0 | base64 -d)
+fi
+
 fsNamespace=$(kubectl get CephFilesystem -n $NS -oname | cut -d'/' -f 2)
 
 printf "${BROWN} Run the following command to mount and test ceph ${NC}\n"
